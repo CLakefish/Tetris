@@ -12,11 +12,13 @@ public class TetrisBlock : MonoBehaviour
 
     [Header("Variables")]
     [SerializeField] public Vector3 rotationPoint;
-    [SerializeField] public float fallSpeed = 0.8f;
+    [SerializeField] public float fallSpeed = 1f;
     internal float previousTime = 0f;
     internal float previousTimePressed;
     internal float delayPressTime = 0.1f;
     internal bool isPlaced = false;
+
+    private static Transform[,] grid = new Transform[width, height];
 
     // Update is called once per frame
     void Update()
@@ -51,19 +53,88 @@ public class TetrisBlock : MonoBehaviour
             }
         }
 
-        if (Time.time - previousTime > ((Mathf.Sign(Input.GetAxisRaw("Vertical")) == -1) ? fallSpeed / 10 : fallSpeed))
+        if (Time.time - previousTime > ((Mathf.Sign(Input.GetAxisRaw("Vertical")) == -1 && Input.GetAxisRaw("Vertical") != 0) ? fallSpeed / 10 : fallSpeed))
         {
             transform.position += new Vector3(0, -1, 0);
 
             if (!canMove())
             {
                 transform.position += new Vector3(0f, 1f, 0f);
+
                 isPlaced = true;
+
+                AddToGrid();
+
+                CheckLine();
+
                 FindObjectOfType<RoundHandler>().SpawnNew();
+
                 enabled = false;
             }
 
             previousTime = Time.time;
+        }
+    }
+
+    void CheckLine()
+    {
+        for (int i = height - 1; i >= 0; i--)
+        {
+            if (HasLine(i))
+            {
+                DeleteLine(i);
+                FixRow(i);
+            }
+        }
+    }
+
+    void FixRow(int i)
+    {
+        for (int h = i; h < height; h++)
+        {
+            for (int w = 0; w < width; w++)
+            {
+                if (grid[w, h] != null)
+                {
+                    grid[w, h - 1] = grid[w, h];
+                    grid[w, h] = null;
+                    grid[w, h - 1].transform.position -= new Vector3(0, 1, 0);
+                }
+            }
+        }
+    }
+
+    void DeleteLine(int i)
+    {
+        for (int w = 0; w < width; w++)
+        {
+            Destroy(grid[w, i].gameObject);
+            grid[w, i] = null;
+
+        }
+    }
+
+    bool HasLine(int j)
+    {
+        for (int i = 0; i < width; i++)
+        {
+            if (grid[i, j] == null)
+            {
+                return  false;
+            }
+        }
+
+        return true;
+    }
+
+    void AddToGrid()
+    {
+        foreach (Transform blockPiece in transform)
+        {
+            int roundedX = Mathf.RoundToInt(blockPiece.transform.position.x);
+            int roundedY = Mathf.RoundToInt(blockPiece.transform.position.y);
+
+            grid[roundedX, roundedY] = blockPiece;
         }
     }
 
@@ -74,7 +145,7 @@ public class TetrisBlock : MonoBehaviour
             int roundedX = Mathf.RoundToInt(blockPiece.transform.position.x);
             int roundedY = Mathf.RoundToInt(blockPiece.transform.position.y);
 
-            if (roundedX < 0 || roundedX >= width || roundedY < 0 || roundedY >= height)
+            if (roundedX < 0 || roundedX >= width || roundedY < 0 || roundedY >= height || grid[roundedX, roundedY] != null)
             {
                 return false;
             }
@@ -85,6 +156,8 @@ public class TetrisBlock : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+
+
 
         Gizmos.DrawWireSphere(transform.TransformPoint(rotationPoint), 0.5f);
     }
