@@ -6,16 +6,16 @@ public class RoundHandler : MonoBehaviour
 {
     [Header("Blocks")]
     public List<GameObject> tetrisBlocks;
-    GameObject currentObject,
+    internal GameObject currentObject,
                nextObject;
     public GameObject nextHolder;
     public GameObject heldObjectHolder;
     GameObject heldObject;
+    internal GameObject visualObj;
 
     bool isActive = true;
     
     public bool canSwap = true;
-    bool particles = true;
 
     [SerializeField] TMPro.TMP_Text pointsCount,
                                     linesCount;
@@ -23,11 +23,13 @@ public class RoundHandler : MonoBehaviour
     [SerializeField] GameObject panel;
     [SerializeField] TMPro.TMP_Text panelText;
     [SerializeField] TMPro.TMP_Text previousBestText;
+    [SerializeField] TMPro.TMP_Text levelText;
 
     [Header("Particles")]
     [SerializeField] GameObject particleObj;
 
-    internal int points, lines;
+    internal int points, lines, level;
+    internal int lineGoal;
 
     // Start is called before the first frame update
     void Start()
@@ -37,6 +39,9 @@ public class RoundHandler : MonoBehaviour
         nextObject = Instantiate(tetrisBlocks[Random.Range(0, tetrisBlocks.Count)], nextHolder.transform.position, Quaternion.identity);
         nextObject.GetComponent<TetrisBlock>().enabled = false;
 
+        visualObj = Instantiate(currentObject, transform.position, Quaternion.identity);
+        visualObj.GetComponent<TetrisBlock>().visual = true;
+
         previousBestText.text = "Previous Best: \n Lines : " + PlayerPrefs.GetInt("bestLines").ToString() + "\nPoints : " + PlayerPrefs.GetInt("bestPoints").ToString();
     }
 
@@ -44,6 +49,7 @@ public class RoundHandler : MonoBehaviour
     {
         pointsCount.text = "Points : " + points.ToString();
         linesCount.text = "Lines : " + lines.ToString();
+        levelText.text = "Level : " + level.ToString();
 
         if (Input.GetKeyDown(KeyCode.Backspace))
         {
@@ -62,6 +68,11 @@ public class RoundHandler : MonoBehaviour
                 currentObject = Instantiate(nextObject, transform.position, Quaternion.identity);
                 currentObject.GetComponent<TetrisBlock>().enabled = true;
 
+                Destroy(visualObj);
+
+                visualObj = Instantiate(currentObject, transform.position, Quaternion.identity);
+                visualObj.GetComponent<TetrisBlock>().visual = true;
+
                 Destroy(nextObject);
 
                 GameObject obj = tetrisBlocks[Random.Range(0, tetrisBlocks.Count)];
@@ -78,6 +89,11 @@ public class RoundHandler : MonoBehaviour
                 currentObject = Instantiate(heldObject, transform.position, Quaternion.identity);
                 currentObject.GetComponent<TetrisBlock>().enabled = true;
 
+                Destroy(visualObj);
+
+                visualObj = Instantiate(currentObject, transform.position, Quaternion.identity);
+                visualObj.GetComponent<TetrisBlock>().visual = true;
+
                 Destroy(heldObject);
 
                 heldObject = Instantiate(temp, heldObjectHolder.transform.position, Quaternion.identity);
@@ -88,12 +104,6 @@ public class RoundHandler : MonoBehaviour
 
             canSwap = false;
         }
-
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            particles = !particles;
-            particleObj.SetActive(particles);
-        }
     }
 
     public void SpawnNew()
@@ -103,7 +113,11 @@ public class RoundHandler : MonoBehaviour
         currentObject = Instantiate(nextObject, transform.position, Quaternion.identity);
         currentObject.GetComponent<TetrisBlock>().enabled = true;
 
+        Destroy(visualObj);
         Destroy(nextObject);
+
+        visualObj = Instantiate(currentObject, transform.position, Quaternion.identity);
+        visualObj.GetComponent<TetrisBlock>().visual = true;
 
         GameObject obj = tetrisBlocks[Random.Range(0, tetrisBlocks.Count)];
 
@@ -113,6 +127,8 @@ public class RoundHandler : MonoBehaviour
 
     public void EndGame()
     {
+        canSwap = false;
+
         panel.gameObject.SetActive(true);
         panelText.text = "Points : " + points.ToString() + "\nLines : " + lines.ToString();
 

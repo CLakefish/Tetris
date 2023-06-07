@@ -13,18 +13,64 @@ public class TetrisBlock : MonoBehaviour
     [Header("Variables")]
     [SerializeField] public Vector3 rotationPoint;
     [SerializeField] public float fallSpeed = 1f;
+    [SerializeField] public ParticleSystem particles;
     internal float previousTime = 0f;
     internal float previousTimePressed;
     internal float delayPressTime = 0.1f;
     internal bool isPlaced = false;
+    public bool visual = false;
+    bool visualPlaced = false;
+
+    RoundHandler r;
 
     int pointCount = 0;
 
     private static Transform[,] grid = new Transform[width, height];
 
+    private void Start()
+    {
+        r = FindObjectOfType<RoundHandler>();
+
+        fallSpeed -= r.lineGoal / 50;
+        fallSpeed = Mathf.Clamp(fallSpeed, .1f, Mathf.Infinity);
+
+        if (visual)
+        {
+            foreach (SpriteRenderer blockPiece in transform.GetComponentsInChildren<SpriteRenderer>())
+            {
+                blockPiece.color = new Color(blockPiece.color.r, blockPiece.color.g, blockPiece.color.b, .3f);
+            }
+        }
+
+        if (r.lineGoal - r.lines == 0)
+        {
+            r.lineGoal += 5;
+            r.level++;
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
+        if (visual)
+        {
+            if (r.currentObject == null) return;
+
+            transform.position = new Vector3(r.currentObject.transform.position.x, transform.position.y, r.currentObject.transform.position.z);
+
+            if (!visualPlaced) transform.position -= new Vector3(0, 1f, 0f);
+
+            if (!visualPlaced) r.visualObj.GetComponent<TetrisBlock>().CheckPos();
+
+            if (!canMove() && !visualPlaced)
+            {
+                transform.position -= new Vector3(0f, -1f, 0f);
+                visualPlaced = true;
+            }
+
+            return;
+        }
+
         if (!canMove())
         {
             FindObjectOfType<RoundHandler>().EndGame();
@@ -55,9 +101,14 @@ public class TetrisBlock : MonoBehaviour
         {
             transform.RotateAround(transform.TransformPoint(rotationPoint), new Vector3(0f, 0f, 1f), 90);
 
+            GameObject visualObj = FindObjectOfType<RoundHandler>().visualObj;
+
+            visualObj.transform.RotateAround(visualObj.transform.TransformPoint(visualObj.GetComponent<TetrisBlock>().rotationPoint), new Vector3(0f, 0f, 1f), 90);
+
             if (!canMove())
             {
                 transform.RotateAround(transform.TransformPoint(rotationPoint), new Vector3(0f, 0f, 1f), -90);
+                visualObj.transform.RotateAround(transform.TransformPoint(visualObj.GetComponent<TetrisBlock>().rotationPoint), new Vector3(0f, 0f, 1f), 90);
             }
         }
 
@@ -93,7 +144,6 @@ public class TetrisBlock : MonoBehaviour
                 FindObjectOfType<RoundHandler>().lines += 1;
                 pointCount += 1;
                 DeleteLine(i);
-                FixRow(i);
             }
         }
 
@@ -141,10 +191,25 @@ public class TetrisBlock : MonoBehaviour
     {
         for (int w = 0; w < width; w++)
         {
-            Destroy(grid[w, i].gameObject);
-            grid[w, i] = null;
+            foreach (SpriteRenderer s in grid[w, i].gameObject.GetComponentsInChildren<SpriteRenderer>())
+            {
+                s.sortingOrder = 1000;
+                s.color = Color.white;
 
+                Destroy(Instantiate(particles, s.transform.position, Quaternion.identity), 0.5f);
+            }
+
+            Destroy(grid[w, i].gameObject, 0.1f);
+            grid[w, i] = null;
         }
+
+        if (r.lineGoal - r.lines == 0)
+        {
+            r.lineGoal += 5;
+            r.level++;
+        }
+
+        FixRow(i);
     }
 
     bool HasLine(int j)
@@ -173,7 +238,7 @@ public class TetrisBlock : MonoBehaviour
         }
     }
 
-    bool canMove()
+    internal bool canMove()
     {
         foreach (Transform blockPiece in transform)
         {
@@ -187,6 +252,30 @@ public class TetrisBlock : MonoBehaviour
         }
 
         return true;
+    }
+
+    internal void CheckPos()
+    {
+        foreach (Transform blockPiece in transform)
+        {
+            int roundedX = Mathf.RoundToInt(blockPiece.transform.position.x);
+            int roundedY = Mathf.RoundToInt(blockPiece.transform.position.y);
+
+            if (roundedX < 0)//|| roundedX >= width || roundedY < 0 || roundedY >= height)
+            {
+                transform.position += new Vector3(1f, 0f, 0f);
+            }
+            if (roundedX >= width)
+            {
+                transform.position -= new Vector3(1f, 0f, 0f);
+            }
+            if (roundedY < 0 || grid[roundedX, roundedY] != null)
+            {
+                transform.position += new Vector3(0f, 1f, 0f);
+            }
+        }
+
+        if (!canMove()) CheckPos();
     }
 
     private void OnDrawGizmos()

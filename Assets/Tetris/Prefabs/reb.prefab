@@ -386,3 +386,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotationPoint: {x: 0, y: 0, z: 0}
   fallSpeed: 0.8
+  particles: {fileID: 421044918495311522, guid: d1813869b3ddc0647899c760aa70c40b, type: 3}
