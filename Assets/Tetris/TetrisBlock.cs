@@ -7,7 +7,7 @@ public class TetrisBlock : MonoBehaviour
     //https://www.youtube.com/watch?v=T5P8ohdxDjo&t=28s
 
     [Header("Parameters")]
-    public static int height = 18;
+    public static int height = 21;
     public static int width = 10;
 
     [Header("Variables")]
@@ -18,11 +18,19 @@ public class TetrisBlock : MonoBehaviour
     internal float delayPressTime = 0.1f;
     internal bool isPlaced = false;
 
+    int pointCount = 0;
+
     private static Transform[,] grid = new Transform[width, height];
 
     // Update is called once per frame
     void Update()
     {
+        if (!canMove())
+        {
+            FindObjectOfType<RoundHandler>().EndGame();
+            Debug.Log("done");
+        }
+
         if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
         {
             transform.position += new Vector3(-1f, 0f, 0f);
@@ -82,10 +90,35 @@ public class TetrisBlock : MonoBehaviour
         {
             if (HasLine(i))
             {
+                FindObjectOfType<RoundHandler>().lines += 1;
+                pointCount += 1;
                 DeleteLine(i);
                 FixRow(i);
             }
         }
+
+        RoundHandler rounds = FindObjectOfType<RoundHandler>();
+
+        switch (pointCount)
+        {
+            case 1:
+                rounds.points += 40;
+                break;
+
+            case 2:
+                rounds.points += 100;
+                break;
+
+            case 3:
+                rounds.points += 300;
+                break;
+
+            case 4:
+                rounds.points += 1200;
+                break;
+        }
+
+        pointCount = 0;
     }
 
     void FixRow(int i)
@@ -129,6 +162,8 @@ public class TetrisBlock : MonoBehaviour
 
     void AddToGrid()
     {
+        FindObjectOfType<RoundHandler>().canSwap = true;
+
         foreach (Transform blockPiece in transform)
         {
             int roundedX = Mathf.RoundToInt(blockPiece.transform.position.x);
