@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Particles : MonoBehaviour
 {
-    public List<ParticleSystem> particleList = new();
+    public List<ParticleSystem> particleList;
     bool particles = true;
 
     // Start is called before the first frame update
@@ -12,12 +12,6 @@ public class Particles : MonoBehaviour
     {
         for (int i = 0; i < 2; i++)
         {
-            if (particleList[Random.Range(0, particleList.Count - 1)].gameObject.activeInHierarchy)
-            {
-                i--;
-                continue;
-            }
-
             particleList[Random.Range(0, particleList.Count - 1)].gameObject.SetActive(true);
         }
     }
