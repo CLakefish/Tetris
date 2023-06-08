@@ -29,6 +29,8 @@ public class TetrisBlock : MonoBehaviour
 
     private void Start()
     {
+        previousTime = Time.time;
+
         r = FindObjectOfType<RoundHandler>();
 
         fallSpeed -= r.lineGoal / 50;
@@ -60,7 +62,7 @@ public class TetrisBlock : MonoBehaviour
 
             if (!visualPlaced) transform.position -= new Vector3(0, 1f, 0f);
 
-            if (!visualPlaced) r.visualObj.GetComponent<TetrisBlock>().CheckPos();
+            if (!visualPlaced) CheckPos();
 
             if (!canMove() && !visualPlaced)
             {
@@ -108,7 +110,32 @@ public class TetrisBlock : MonoBehaviour
             if (!canMove())
             {
                 transform.RotateAround(transform.TransformPoint(rotationPoint), new Vector3(0f, 0f, 1f), -90);
-                visualObj.transform.RotateAround(transform.TransformPoint(visualObj.GetComponent<TetrisBlock>().rotationPoint), new Vector3(0f, 0f, 1f), 90);
+                visualObj.transform.RotateAround(visualObj.transform.TransformPoint(visualObj.GetComponent<TetrisBlock>().rotationPoint), new Vector3(0f, 0f, 1f), -90);
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Mouse1))
+        {
+            transform.position = r.visualObj.transform.position += new Vector3(0, -1, 0);
+
+            if (!canMove())
+            {
+                transform.position += new Vector3(0f, 1f, 0f);
+
+                foreach (SpriteRenderer s in gameObject.GetComponentsInChildren<SpriteRenderer>())
+                {
+                    Destroy(Instantiate(particles, s.transform.position, Quaternion.identity), 0.5f);
+                }
+
+                isPlaced = true;
+
+                AddToGrid();
+
+                CheckLine();
+
+                FindObjectOfType<RoundHandler>().SpawnNew();
+
+                enabled = false;
             }
         }
 
@@ -267,11 +294,19 @@ public class TetrisBlock : MonoBehaviour
             }
             if (roundedX >= width)
             {
-                transform.position -= new Vector3(1f, 0f, 0f);
+                int count = (roundedX - width);
+
+                transform.position -= new Vector3(count, 0f, 0f);
             }
+
             if (roundedY < 0 || grid[roundedX, roundedY] != null)
             {
                 transform.position += new Vector3(0f, 1f, 0f);
+            }
+
+            if (grid[roundedX, roundedY + 1] != null)
+            {
+                transform.position += new Vector3(0f, 1f + 1f, 0f);
             }
         }
 
