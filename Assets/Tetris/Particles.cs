@@ -10,10 +10,7 @@ public class Particles : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        for (int i = 0; i < 2; i++)
-        {
-            particleList[Random.Range(0, particleList.Count - 1)].gameObject.SetActive(true);
-        }
+        particleList[Random.Range(0, particleList.Count - 1)].gameObject.SetActive(true);
     }
 
     // Update is called once per frame
@@ -27,10 +24,7 @@ public class Particles : MonoBehaviour
             {
                 case true:
 
-                    for (int i = 0; i < Random.Range(0, 2); i++)
-                    {
-                        particleList[Random.Range(0, particleList.Count - 1)].gameObject.SetActive(true);
-                    }
+                    particleList[Random.Range(0, particleList.Count - 1)].gameObject.SetActive(true);
 
                     break;
 
